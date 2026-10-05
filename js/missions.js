@@ -1,50 +1,34 @@
-// --- ADVANCED MISSIONS & ACHIEVEMENTS SYSTEM ---
+// --- MISSIONS & REWARDS SYSTEM ---
 class MissionSystem {
     constructor() {
-        this.missionsList = [
-            { id: 1, title: "Collect 30 Coins", type: "coins", target: 30, progress: parseInt(localStorage.getItem('mr_m1_prog')) || 0, reward: 200, claimed: localStorage.getItem('mr_m1_claimed') === 'true' },
-            { id: 2, title: "Reach Score 500", type: "score", target: 500, progress: parseInt(localStorage.getItem('mr_m2_prog')) || 0, reward: 350, claimed: localStorage.getItem('mr_m2_claimed') === 'true' },
-            { id: 3, title: "Collect 100 Coins", type: "coins", target: 100, progress: parseInt(localStorage.getItem('mr_m3_prog')) || 0, reward: 500, claimed: localStorage.getItem('mr_m3_claimed') === 'true' }
-        ];
-        this.activeMissionIndex = parseInt(localStorage.getItem('mr_active_mission')) || 0;
+        this.target = parseInt(localStorage.getItem('mr_mission_target')) || 30;
+        this.progress = parseInt(localStorage.getItem('mr_mission_progress')) || 0;
+        this.claimed = localStorage.getItem('mr_mission_claimed') === 'true';
     }
 
     save() {
-        const m = this.missionsList[this.activeMissionIndex];
-        localStorage.setItem(`mr_m${m.id}_prog`, m.progress);
-        localStorage.setItem(`mr_m${m.id}_claimed`, m.claimed);
-        localStorage.setItem('mr_active_mission', this.activeMissionIndex);
+        localStorage.setItem('mr_mission_target', this.target);
+        localStorage.setItem('mr_mission_progress', this.progress);
+        localStorage.setItem('mr_mission_claimed', this.claimed);
     }
 
-    addProgress(amount, type = "coins") {
-        let currentMission = this.missionsList[this.activeMissionIndex];
-        if (!currentMission.claimed && currentMission.type === type) {
-            currentMission.progress += amount;
-            if (currentMission.progress > currentMission.target) {
-                currentMission.progress = currentMission.target;
+    addProgress(amount) {
+        if (!this.claimed && this.progress < this.target) {
+            this.progress += amount;
+            if (this.progress > this.target) {
+                this.progress = this.target;
             }
             this.save();
-            this.updateUI();
         }
     }
 
     claimReward() {
-        let currentMission = this.missionsList[this.activeMissionIndex];
-        if (!currentMission.claimed && currentMission.progress >= currentMission.target) {
-            gameState.coins += currentMission.reward;
-            currentMission.claimed = true;
+        if (!this.claimed && this.progress >= this.target) {
+            gameState.coins += 200;
+            this.claimed = true;
             this.save();
-            
             if (typeof sounds !== 'undefined') sounds.playCoinSound();
             saveProgress();
-
-            // Agla mission activate karein agar available ho
-            if (this.activeMissionIndex < this.missionsList.length - 1) {
-                this.activeMissionIndex++;
-                this.save();
-            }
-            
-            this.updateUI();
             return true;
         }
         return false;
@@ -53,19 +37,15 @@ class MissionSystem {
     updateUI() {
         const missionText = document.getElementById('mission-desc');
         const missionBtn = document.getElementById('btn-claim-mission');
-        
-        let currentMission = this.missionsList[this.activeMissionIndex];
-
         if (missionText) {
-            missionText.innerText = `${currentMission.title} (Progress: ${currentMission.progress}/${currentMission.target})`;
+            missionText.innerText = `Collect ${this.target} Coins (Progress: ${this.progress}/${this.target})`;
         }
-        
         if (missionBtn) {
-            if (currentMission.claimed) {
-                missionBtn.innerText = "Completed!";
+            if (this.claimed) {
+                missionBtn.innerText = "Claimed!";
                 missionBtn.disabled = true;
-            } else if (currentMission.progress >= currentMission.target) {
-                missionBtn.innerText = `Claim ${currentMission.reward} Coins!`;
+            } else if (this.progress >= this.target) {
+                missionBtn.innerText = "Claim 200 Coins!";
                 missionBtn.disabled = false;
             } else {
                 missionBtn.innerText = "In Progress";
